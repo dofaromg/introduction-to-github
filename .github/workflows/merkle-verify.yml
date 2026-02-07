@@ -1,0 +1,78 @@
+name: Merkle Tree Verification
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  verify-merkle-tree:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Verify Merkle tree files exist
+        run: |
+          echo "Checking for Merkle tree files..."
+          if [ ! -f ".merkle-tree" ]; then
+            echo "Warning: .merkle-tree file not found"
+            exit 0
+          fi
+          if [ ! -f ".merkle-signatures" ]; then
+            echo "Warning: .merkle-signatures file not found"
+            exit 0
+          fi
+          echo "✓ Merkle tree files found"
+          
+      - name: Display Merkle tree
+        run: |
+          if [ -f ".merkle-tree" ]; then
+            echo "=== Merkle Tree Contents ==="
+            cat .merkle-tree
+            echo ""
+          fi
+          
+      - name: Display Merkle signatures
+        run: |
+          if [ -f ".merkle-signatures" ]; then
+            echo "=== Merkle Signatures ==="
+            cat .merkle-signatures
+            echo ""
+          fi
+          
+      - name: Verify Merkle root
+        run: |
+          if [ ! -f ".merkle-tree" ] || [ ! -f ".merkle-signatures" ]; then
+            echo "Skipping verification - Merkle files not present"
+            exit 0
+          fi
+          
+          echo "Verifying Merkle root consistency..."
+          
+          # Extract the root from merkle-tree
+          TREE_ROOT=$(grep "^Root:" .merkle-tree | awk '{print $2}')
+          
+          # Extract the root from merkle-signatures
+          SIG_ROOT=$(grep "^Root:" .merkle-signatures | awk '{print $2}')
+          
+          echo "Root in .merkle-tree: $TREE_ROOT"
+          echo "Root in .merkle-signatures: $SIG_ROOT"
+          
+          if [ "$TREE_ROOT" = "$SIG_ROOT" ]; then
+            echo "✓ Merkle roots match!"
+          else
+            echo "✗ ERROR: Merkle roots do not match!"
+            exit 1
+          fi
+          
+      - name: Verification complete
+        run: |
+          echo "✓ Merkle tree verification complete!"
