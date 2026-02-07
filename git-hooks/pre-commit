@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Pre-commit hook for Merkle tree signing
+# This hook runs before each commit to update the Merkle tree
+
+echo "Running pre-commit hook: Merkle signing..."
+
+# Get the repository root directory
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+# Change to repository root
+cd "$REPO_ROOT"
+
+# Run the Merkle signing script
+if [ -x "./merkle-sign.sh" ]; then
+    ./merkle-sign.sh incremental
+    
+    # Add the Merkle files to the commit if they were modified
+    if [ -f ".merkle-tree" ]; then
+        git add .merkle-tree
+    fi
+    
+    if [ -f ".merkle-signatures" ]; then
+        git add .merkle-signatures
+    fi
+    
+    echo "✓ Pre-commit Merkle signing complete"
+else
+    echo "Warning: merkle-sign.sh not found or not executable"
+fi
+
+exit 0
